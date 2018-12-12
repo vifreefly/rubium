@@ -105,7 +105,7 @@ module Rubium
       timer = 0
       until current_response.at_xpath(selector)
         return false if timer >= wait
-        sleep 0.2
+        timer += 0.2 and sleep 0.2
       end
 
       true
@@ -117,7 +117,7 @@ module Rubium
       timer = 0
       until body.include?(text)
         return false if timer >= wait
-        sleep 0.2
+        timer += 0.2 and sleep 0.2
       end
 
       true
