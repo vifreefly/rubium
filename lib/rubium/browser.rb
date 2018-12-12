@@ -101,8 +101,14 @@ module Rubium
       ::Nokogiri::HTML(body)
     end
 
-    def has_xpath?(selector, wait: true)
-      sleep 3 and true
+    def has_xpath?(selector, wait: 0)
+      timer = 0
+      until current_response.at_xpath(selector)
+        return false if timer >= wait
+        sleep 0.2
+      end
+
+      true
     end
 
     def has_text?(text, wait: 0)
@@ -127,13 +133,13 @@ module Rubium
 
     # https://github.com/cyrus-and/chrome-remote-interface/issues/226#issuecomment-320247756
     # https://stackoverflow.com/a/18937620
-    def send_key_on(selector, key = :enter)
+    def send_key_on(selector, key = 13)
       # sleep rand @global_sleep
 
       @client.send_cmd "Runtime.evaluate", expression: <<~JS
         document.querySelector("#{selector}").dispatchEvent(
           new KeyboardEvent("keydown", {
-            bubbles: true, cancelable: true, keyCode: 13
+            bubbles: true, cancelable: true, keyCode: #{key}
           })
         );
       JS
