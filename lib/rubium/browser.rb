@@ -1,6 +1,7 @@
 require 'chrome_remote'
 require 'random-port'
 require 'cliver'
+require 'timeout'
 
 at_exit do
   Rubium::Browser.running_pids.each { |pid| Process.kill("HUP", pid) ; puts "Killed #{pid}" }
@@ -20,48 +21,18 @@ module Rubium
       end
     end
 
-    attr_reader  :client, :devtools_url, :pid, :port
+    attr_reader  :client, :devtools_url, :pid, :port, :options
 
-    def initialize(debugging_port: nil, proxy_server: nil, user_agent: nil, headless: true, window_size: nil, user_data_dir: nil)
-      @port = debugging_port || self.class.ports_pool.acquire
-      @data_dir = "/tmp/chrome-testing#{rand(1111..32423423)}" # TODO
+    def initialize(options = {})
+      @options = options
+      create_browser
+    end
 
-      # @global_sleep = Rubium.configuration.global_sleep || 0
+    def restart!
+      close
+      create_browser
 
-      chrome_path = Rubium.configuration.chrome_path ||
-        Cliver.detect("chromium-browser") ||
-        Cliver.detect("google-chrome")
-      raise ConfigurationError, "Can't find chrome executable" unless chrome_path
-
-      command = %W(
-        #{chrome_path} about:blank
-        --remote-debugging-port=#{@port}
-        --user-data-dir=#{@data_dir}
-      ) + DEFAULT_PUPPETEER_ARGS
-
-      command << "--headless" if ENV["HEADLESS"] != "false" && headless
-      command << "--user-agent=#{user_agent}" if user_agent
-      command << "--window-size=#{window_size.join(',')}" if window_size
-      command << "--proxy-server=#{proxy_server}" if proxy_server
-
-      @pid = spawn(*command, [:out, :err] => "/dev/null")
-      self.class.running_pids << @pid
-      @closed = false
-
-      begin
-        sleep 0.5
-        @client = ChromeRemote.client(port: @port)
-      rescue => e
-        puts "Error connection: #{e.inspect}"
-        retry
-      end
-
-      @devtools_url = "http://localhost:#{@port}/"
-
-      # https://github.com/GoogleChrome/puppeteer/blob/master/lib/Page.js
-      @client.send_cmd "Target.setAutoAttach", autoAttach: true, waitForDebuggerOnStart: false
-      @client.send_cmd "Network.enable"
-      @client.send_cmd "Page.enable"
+      puts ">>> Rubium::Browser: restarted browser!"
     end
 
     def close
@@ -81,7 +52,7 @@ module Rubium
       response = @client.send_cmd "Page.navigate", url: url
 
       if wait
-        @client.wait_for "Page.loadEventFired"
+        Timeout.timeout(30) { @client.wait_for "Page.loadEventFired" }
         # @client.wait_for "Page.frameStoppedLoading", frameId: response["frameId"]
       else
         response
@@ -98,7 +69,7 @@ module Rubium
 
     def current_response(type = :html)
       require 'nokogiri'
-      ::Nokogiri::HTML(body)
+      Nokogiri::HTML(body)
     end
 
     def has_xpath?(selector, wait: 0)
@@ -155,6 +126,69 @@ module Rubium
     def cookies
       response = @client.send_cmd "Network.getCookies"
       response["cookies"]
+    end
+
+    private
+
+    def create_browser
+      @port = options[:debugging_port] || self.class.ports_pool.acquire
+      @data_dir = "/tmp/chrome-testing#{rand(1111..32423423)}" # TODO
+
+      # @global_sleep = Rubium.configuration.global_sleep || 0
+
+      chrome_path = Rubium.configuration.chrome_path ||
+        Cliver.detect("chromium-browser") ||
+        Cliver.detect("google-chrome")
+      raise ConfigurationError, "Can't find chrome executable" unless chrome_path
+
+      command = %W(
+        #{chrome_path} about:blank
+        --remote-debugging-port=#{@port}
+        --user-data-dir=#{@data_dir}
+      ) + DEFAULT_PUPPETEER_ARGS
+
+      command << "--headless" if ENV["HEADLESS"] != "false" && options[:headless] != false
+      command << "--window-size=#{options[:window_size].join(',')}" if options[:window_size]
+
+      if options[:user_agent]
+        user_agent = options[:user_agent].respond_to?(:call) ? options[:user_agent].call : options[:user_agent]
+        puts "Rubium::Browser: enabled user_agent: #{user_agent}"
+        command << "--user-agent=#{user_agent}"
+      end
+
+      if options[:proxy_server]
+        proxy_server = options[:proxy_server].respond_to?(:call) ? options[:proxy_server].call : options[:proxy_server]
+        proxy_server = convert_proxy(proxy_server) unless proxy_server.include?("://")
+
+        puts "Rubium::Browser: enabled proxy_server: #{proxy_server}"
+        command << "--proxy-server=#{proxy_server}"
+      end
+
+      @pid = spawn(*command, [:out, :err] => "/dev/null")
+      self.class.running_pids << @pid
+      @closed = false
+
+      begin
+        sleep 0.5
+        @client = ChromeRemote.client(port: @port)
+      rescue => e
+        puts "Error connection: #{e.inspect}"
+        retry
+      end
+
+      @devtools_url = "http://localhost:#{@port}/"
+
+      # https://github.com/GoogleChrome/puppeteer/blob/master/lib/Page.js
+      @client.send_cmd "Target.setAutoAttach", autoAttach: true, waitForDebuggerOnStart: false
+      @client.send_cmd "Network.enable"
+      @client.send_cmd "Page.enable"
+
+      evaluate_on_new_document(options[:extension_code]) if options[:extension_code]
+    end
+
+    def convert_proxy(proxy_string)
+      ip, port, type, user, password = proxy_string.split(":")
+      "#{type}://#{ip}:#{port}"
     end
   end
 end
