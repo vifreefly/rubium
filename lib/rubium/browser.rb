@@ -128,6 +128,16 @@ module Rubium
       response["cookies"]
     end
 
+    def fill_in(selector, text)
+      execute_script <<~HEREDOC
+        document.querySelector("#{selector}").value = "#{text}"
+      HEREDOC
+    end
+
+    def execute_script(script)
+      @client.send_cmd "Runtime.evaluate", expression: script
+    end
+
     private
 
     def create_browser
