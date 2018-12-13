@@ -86,7 +86,7 @@ module Rubium
       # body.match?(/#{text}/)
 
       timer = 0
-      until body.include?(text)
+      until body&.include?(text)
         return false if timer >= wait
         timer += 0.2 and sleep 0.2
       end
