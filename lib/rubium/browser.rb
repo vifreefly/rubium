@@ -1,7 +1,9 @@
 require 'chrome_remote'
+require 'nokogiri'
 require 'random-port'
 require 'cliver'
 require 'timeout'
+require 'securerandom'
 
 at_exit do
   Rubium::Browser.running_pids.each { |pid| Process.kill("HUP", pid) ; puts "Killed #{pid}" }
@@ -31,12 +33,9 @@ module Rubium
     def restart!
       close
       create_browser
-
-      puts ">>> Rubium::Browser: restarted browser!"
     end
 
     def close
-      # @client.send_cmd "Browser.close" # Didn't work in some cases
       Process.kill("HUP", @pid)
       self.class.running_pids.delete(@pid)
       self.class.ports_pool.release(@port)
@@ -44,16 +43,14 @@ module Rubium
       FileUtils.rm_rf(@data_dir) if Dir.exist?(@data_dir)
       @closed = true
     end
+
     alias_method :destroy_driver!, :close
 
-    def goto(url, wait: true)
-      # sleep rand @global_sleep
-
+    def goto(url, wait: 30)
       response = @client.send_cmd "Page.navigate", url: url
 
       if wait
-        Timeout.timeout(30) { @client.wait_for "Page.loadEventFired" }
-        # @client.wait_for "Page.frameStoppedLoading", frameId: response["frameId"]
+        Timeout.timeout(wait) { @client.wait_for "Page.loadEventFired" }
       else
         response
       end
@@ -62,13 +59,11 @@ module Rubium
     alias_method :visit, :goto
 
     def body
-      # add evaluate method
       response = @client.send_cmd "Runtime.evaluate", expression: 'document.documentElement.outerHTML'
       response.dig("result", "value")
     end
 
-    def current_response(type = :html)
-      require 'nokogiri'
+    def current_response
       Nokogiri::HTML(body)
     end
 
@@ -83,8 +78,6 @@ module Rubium
     end
 
     def has_text?(text, wait: 0)
-      # body.match?(/#{text}/)
-
       timer = 0
       until body&.include?(text)
         return false if timer >= wait
@@ -95,8 +88,6 @@ module Rubium
     end
 
     def click(selector)
-      # sleep rand @global_sleep
-
       @client.send_cmd "Runtime.evaluate", expression: <<~JS
         document.querySelector("#{selector}").click();
       JS
@@ -104,9 +95,7 @@ module Rubium
 
     # https://github.com/cyrus-and/chrome-remote-interface/issues/226#issuecomment-320247756
     # https://stackoverflow.com/a/18937620
-    def send_key_on(selector, key = 13)
-      # sleep rand @global_sleep
-
+    def send_key_on(selector, key)
       @client.send_cmd "Runtime.evaluate", expression: <<~JS
         document.querySelector("#{selector}").dispatchEvent(
           new KeyboardEvent("keydown", {
@@ -142,9 +131,7 @@ module Rubium
 
     def create_browser
       @port = options[:debugging_port] || self.class.ports_pool.acquire
-      @data_dir = "/tmp/chrome-testing#{rand(1111..32423423)}" # TODO
-
-      # @global_sleep = Rubium.configuration.global_sleep || 0
+      @data_dir = "/tmp/rubium_profile_#{SecureRandom.alphanumeric}"
 
       chrome_path = Rubium.configuration.chrome_path ||
         Cliver.detect("chromium-browser") ||
