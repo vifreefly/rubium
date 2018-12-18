@@ -131,7 +131,7 @@ module Rubium
 
     def create_browser
       @port = options[:debugging_port] || self.class.ports_pool.acquire
-      @data_dir = "/tmp/rubium_profile_#{SecureRandom.alphanumeric}"
+      @data_dir = "/tmp/rubium_profile_#{SecureRandom.hex}"
 
       chrome_path = Rubium.configuration.chrome_path ||
         Cliver.detect("chromium-browser") ||
