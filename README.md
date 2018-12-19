@@ -1,6 +1,6 @@
 # Rubium
 
-Rubium is a handy wrapper around [chrome_remote](https://github.com/cavalle/chrome_remote) gem. It adds browsers instances handling, and some Capybara-like methods. It is very lightweight (200 lines of code in the main `Rubium::Browser` class for now) and doens't use Selenium or Capybara.
+Rubium is a handy wrapper around [chrome_remote](https://github.com/cavalle/chrome_remote) gem. It adds browsers instances handling, and some Capybara-like methods. It is very lightweight (200 lines of code in the main `Rubium::Browser` class for now) and doens't use Selenium or Capybara. Consider Rubium as a _very simple_ and _basic_ implementation of [Puppeteer](https://github.com/GoogleChrome/puppeteer) in Ruby language.
 
 You can use Rubium as a lightweight alternative to Selenium/Capybara/Watir if you need to perform some operations (like web scraping) using Headless Chromium and Ruby. Of course, the API currently doesn't has a lot of methods to automate browser, but it has the most frequently used and basic ones.
 
