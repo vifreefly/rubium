@@ -55,6 +55,7 @@ There are some options which you can provide while creating browser instance:
 browser = Rubium::Browser.new(
   debugging_port: 9222, # custom debugging port
   headless: false, # Run browser in normal (not headless) mode
+  window_size: [1600, 900], # Custom window size
   user_agent: "Some user agent", # Custom user-agent
   proxy_server: "http://1.1.1.1:8080", # Set proxy
 )
