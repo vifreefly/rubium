@@ -6,12 +6,14 @@ require 'timeout'
 require 'securerandom'
 
 at_exit do
-  Rubium::Browser.running_pids.each { |pid| Process.kill("HUP", pid) ; puts "Killed #{pid}" }
+  Rubium::Browser.running_pids.each { |pid| Process.kill("HUP", pid) }
 end
 
 module Rubium
   class Browser
     class ConfigurationError < StandardError; end
+
+    MAX_CONNECT_WAIT_TIME = 2
 
     class << self
       def ports_pool
@@ -36,15 +38,21 @@ module Rubium
     end
 
     def close
-      Process.kill("HUP", @pid)
-      self.class.running_pids.delete(@pid)
-      self.class.ports_pool.release(@port)
+      unless closed?
+        Process.kill("HUP", @pid)
+        self.class.running_pids.delete(@pid)
+        self.class.ports_pool.release(@port)
 
-      FileUtils.rm_rf(@data_dir) if Dir.exist?(@data_dir)
-      @closed = true
+        FileUtils.rm_rf(@data_dir) if Dir.exist?(@data_dir)
+        @closed = true
+      end
     end
 
     alias_method :destroy_driver!, :close
+
+    def closed?
+      @closed
+    end
 
     def goto(url, wait: 30)
       response = @client.send_cmd "Page.navigate", url: url
@@ -149,15 +157,12 @@ module Rubium
 
       if options[:user_agent]
         user_agent = options[:user_agent].respond_to?(:call) ? options[:user_agent].call : options[:user_agent]
-        puts "Rubium::Browser: enabled user_agent: #{user_agent}"
         command << "--user-agent=#{user_agent}"
       end
 
       if options[:proxy_server]
         proxy_server = options[:proxy_server].respond_to?(:call) ? options[:proxy_server].call : options[:proxy_server]
         proxy_server = convert_proxy(proxy_server) unless proxy_server.include?("://")
-
-        puts "Rubium::Browser: enabled proxy_server: #{proxy_server}"
         command << "--proxy-server=#{proxy_server}"
       end
 
@@ -165,12 +170,12 @@ module Rubium
       self.class.running_pids << @pid
       @closed = false
 
+      counter = 0
       begin
-        sleep 0.5
+        counter += 0.2 and sleep 0.2
         @client = ChromeRemote.client(port: @port)
-      rescue => e
-        puts "Error connection: #{e.inspect}"
-        retry
+      rescue Errno::ECONNREFUSED => e
+        counter < MAX_CONNECT_WAIT_TIME ? retry : raise(e)
       end
 
       @devtools_url = "http://localhost:#{@port}/"
