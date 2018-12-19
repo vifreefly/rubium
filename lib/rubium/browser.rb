@@ -75,9 +75,19 @@ module Rubium
       Nokogiri::HTML(body)
     end
 
-    def has_xpath?(selector, wait: 0)
+    def has_xpath?(path, wait: 0)
       timer = 0
-      until current_response.at_xpath(selector)
+      until current_response.at_xpath(path)
+        return false if timer >= wait
+        timer += 0.2 and sleep 0.2
+      end
+
+      true
+    end
+
+    def has_css?(selector, wait: 0)
+      timer = 0
+      until current_response.at_css(selector)
         return false if timer >= wait
         timer += 0.2 and sleep 0.2
       end
