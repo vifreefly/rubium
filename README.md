@@ -39,7 +39,8 @@ browser.evaluate_on_new_document(File.read "browser_inject.js")
 # Evaluate JS code expression:
 browser.execute_script("JS code string")
 
-# Access chrome_remote client directly:
+# Access chrome_remote client (instance of ChromeRemote class) directly:
+# See more here: https://github.com/cavalle/chrome_remote#using-the-chromeremote-api
 browser.client
 
 # Close browser:
