@@ -130,10 +130,19 @@ module Rubium
       @client.send_cmd "Page.addScriptToEvaluateOnNewDocument", source: script
     end
 
+    ###
+
     def cookies
       response = @client.send_cmd "Network.getCookies"
       response["cookies"]
     end
+
+    # https://chromedevtools.github.io/devtools-protocol/tot/Network#method-setCookies
+    def set_cookies(cookies)
+      @client.send_cmd "Network.setCookies", cookies: cookies
+    end
+
+    ###
 
     def fill_in(selector, text)
       execute_script <<~HEREDOC
