@@ -31,6 +31,7 @@ module Rubium
 
     def initialize(options = {})
       @options = options
+
       if @options[:enable_logger]
         @logger = Logger.new(STDOUT)
         @logger.progname = self.class.to_s
@@ -40,7 +41,7 @@ module Rubium
     end
 
     def restart!
-      logger.info "Restarting..." if logger
+      logger.info "Restarting..." if options[:enable_logger]
 
       close
       create_browser
@@ -48,7 +49,7 @@ module Rubium
 
     def close
       if closed?
-        logger.info "Browser already has been closed" if logger
+        logger.info "Browser already has been closed" if options[:enable_logger]
       else
         Process.kill("HUP", @pid)
         self.class.running_pids.delete(@pid)
@@ -57,7 +58,7 @@ module Rubium
         FileUtils.rm_rf(@data_dir) if Dir.exist?(@data_dir)
         @closed = true
 
-        logger.info "Closed browser" if logger
+        logger.info "Closed browser" if options[:enable_logger]
       end
     end
 
@@ -68,7 +69,7 @@ module Rubium
     end
 
     def goto(url, wait: options[:max_timeout] || MAX_DEFAULT_TIMEOUT)
-      logger.info "Started request: #{url}" if logger
+      logger.info "Started request: #{url}" if options[:enable_logger]
       if options[:restart_after] && processed_requests_count >= options[:restart_after]
         restart!
       end
@@ -83,7 +84,7 @@ module Rubium
       end
 
       @processed_requests_count += 1
-      logger.info "Finished request: #{url}" if logger
+      logger.info "Finished request: #{url}" if options[:enable_logger]
     end
 
     alias_method :visit, :goto
@@ -232,7 +233,7 @@ module Rubium
 
       set_cookies(options[:cookies]) if options[:cookies]
 
-      logger.info "Opened browser" if logger
+      logger.info "Opened browser" if options[:enable_logger]
     end
 
     def convert_proxy(proxy_string)

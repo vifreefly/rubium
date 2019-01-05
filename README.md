@@ -89,7 +89,6 @@ browser = Rubium::Browser.new(
 > What for: Chrome doesn't provide an API to change proxies on the fly (after browser has been started). It is possible to set proxy while starting Chrome instance by providing CLI argument only. On the other hand, Rubium allows you to automatically restart browser (`restart_after` option) after N processed requests. On each restart, if options `user_agent` and/or `proxy_server` has lambda format, then lambda will be called to fetch fresh value. Thus it's possible to rotate proxies/user-agents without any much effort.
 
 
-
 **You can provide custom Chrome binary** path this way:
 
 ```ruby
