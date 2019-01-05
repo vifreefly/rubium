@@ -1,5 +1,7 @@
 # Rubium
 
+> **Rubium updated to 0.2.0 version!** Added new options like `set_cookies`, `restart_after`, `urls_blacklist`, `disable_images` and others. Check the readme below:
+
 Rubium is a handy wrapper around [chrome_remote](https://github.com/cavalle/chrome_remote) gem. It adds browsers instances handling, and some Capybara-like methods. It is very lightweight (250 lines of code in the main `Rubium::Browser` class for now) and doens't use Selenium or Capybara. Consider Rubium as a _very simple_ and _basic_ implementation of [Puppeteer](https://github.com/GoogleChrome/puppeteer) in Ruby language.
 
 You can use Rubium as a lightweight alternative to Selenium/Capybara/Watir if you need to perform some operations (like web scraping) using Headless Chromium and Ruby. Of course, the API currently doesn't has a lot of methods to automate browser, but it has the most frequently used and basic ones.
@@ -69,7 +71,9 @@ browser = Rubium::Browser.new(
   cookies: [],                           # Set custom cookies, see above `set_cookies`
   restart_after: 25,                     # Automatically restart browser after N processed requests
   enable_logger: true,                   # Enable logger to log info about processing requests
-  max_timeout: 30                        # How long to wait (in seconds) until page will be fully loaded. Default 60 sec.
+  max_timeout: 30,                       # How long to wait (in seconds) until page will be fully loaded. Default 60 sec.
+  urls_blacklist: ["*some-domain.com*"], # Skip all requests which match provided patterns (wildcard allowed).
+  disable_images: true                   # Do not download images.
 )
 ```
 
