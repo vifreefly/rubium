@@ -74,13 +74,18 @@ module Rubium
         restart!
       end
 
-      @client.send_cmd "Page.navigate", url: url
+      response = @client.send_cmd "Page.navigate", url: url
 
       # By default, after Page.navigate we should wait till page will load completely
       # using Page.loadEventFired. But on some websites with Ajax navigation, Page.loadEventFired
       # will stuck forever. In this case you can provide `wait: false` option to skip waiting.
       if wait != false
-        Timeout.timeout(wait) { @client.wait_for "Page.loadEventFired" }
+        # https://chromedevtools.github.io/devtools-protocol/tot/Page#event-frameStoppedLoading
+        Timeout.timeout(wait) do
+          @client.wait_for do |event_name, event_params|
+            event_name == "Page.frameStoppedLoading" && event_params["frameId"] == response["frameId"]
+          end
+        end
       end
 
       @processed_requests_count += 1
@@ -232,6 +237,22 @@ module Rubium
       evaluate_on_new_document(options[:extension_code]) if options[:extension_code]
 
       set_cookies(options[:cookies]) if options[:cookies]
+
+      if options[:urls_blacklist] || options[:disable_images]
+        urls = []
+
+        if options[:urls_blacklist]
+          urls += options[:urls_blacklist]
+        end
+
+        if options[:disable_images]
+          urls += %w(jpg jpeg png gif swf svg tif).map { |ext| ["*.#{ext}", "*.#{ext}?*"] }.flatten
+          urls << "data:image*"
+        end
+
+        @client.send_cmd "Network.setBlockedURLs", urls: urls
+      end
+
 
       logger.info "Opened browser" if options[:enable_logger]
     end
