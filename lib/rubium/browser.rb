@@ -4,6 +4,7 @@ require 'random-port'
 require 'cliver'
 require 'timeout'
 require 'securerandom'
+require 'logger'
 
 at_exit do
   Rubium::Browser.running_pids.each { |pid| Process.kill("HUP", pid) }
@@ -14,6 +15,7 @@ module Rubium
     class ConfigurationError < StandardError; end
 
     MAX_CONNECT_WAIT_TIME = 2
+    MAX_DEFAULT_TIMEOUT = 60
 
     class << self
       def ports_pool
@@ -25,26 +27,37 @@ module Rubium
       end
     end
 
-    attr_reader  :client, :devtools_url, :pid, :port, :options
+    attr_reader  :client, :devtools_url, :pid, :port, :options, :processed_requests_count, :logger
 
     def initialize(options = {})
       @options = options
+      if @options[:enable_logger]
+        @logger = Logger.new(STDOUT)
+        @logger.progname = self.class.to_s
+      end
+
       create_browser
     end
 
     def restart!
+      logger.info "Restarting..." if logger
+
       close
       create_browser
     end
 
     def close
-      unless closed?
+      if closed?
+        logger.info "Browser already has been closed" if logger
+      else
         Process.kill("HUP", @pid)
         self.class.running_pids.delete(@pid)
         self.class.ports_pool.release(@port)
 
         FileUtils.rm_rf(@data_dir) if Dir.exist?(@data_dir)
         @closed = true
+
+        logger.info "Closed browser" if logger
       end
     end
 
@@ -54,14 +67,23 @@ module Rubium
       @closed
     end
 
-    def goto(url, wait: 30)
-      response = @client.send_cmd "Page.navigate", url: url
-
-      if wait
-        Timeout.timeout(wait) { @client.wait_for "Page.loadEventFired" }
-      else
-        response
+    def goto(url, wait: options[:max_timeout] || MAX_DEFAULT_TIMEOUT)
+      logger.info "Started request: #{url}" if logger
+      if options[:restart_after] && processed_requests_count >= options[:restart_after]
+        restart!
       end
+
+      @client.send_cmd "Page.navigate", url: url
+
+      # By default, after Page.navigate we should wait till page will load completely
+      # using Page.loadEventFired. But on some websites with Ajax navigation, Page.loadEventFired
+      # will stuck forever. In this case you can provide `wait: false` option to skip waiting.
+      if wait != false
+        Timeout.timeout(wait) { @client.wait_for "Page.loadEventFired" }
+      end
+
+      @processed_requests_count += 1
+      logger.info "Finished request: #{url}" if logger
     end
 
     alias_method :visit, :goto
@@ -106,21 +128,21 @@ module Rubium
     end
 
     def click(selector)
-      @client.send_cmd "Runtime.evaluate", expression: <<~JS
+      @client.send_cmd "Runtime.evaluate", expression: <<~js
         document.querySelector("#{selector}").click();
-      JS
+      js
     end
 
     # https://github.com/cyrus-and/chrome-remote-interface/issues/226#issuecomment-320247756
     # https://stackoverflow.com/a/18937620
     def send_key_on(selector, key)
-      @client.send_cmd "Runtime.evaluate", expression: <<~JS
+      @client.send_cmd "Runtime.evaluate", expression: <<~js
         document.querySelector("#{selector}").dispatchEvent(
           new KeyboardEvent("keydown", {
             bubbles: true, cancelable: true, keyCode: #{key}
           })
         );
-      JS
+      js
     end
 
     # https://github.com/GoogleChrome/puppeteer/blob/master/lib/Page.js#L784
@@ -145,9 +167,9 @@ module Rubium
     ###
 
     def fill_in(selector, text)
-      execute_script <<~HEREDOC
+      execute_script <<~js
         document.querySelector("#{selector}").value = "#{text}"
-      HEREDOC
+      js
     end
 
     def execute_script(script)
@@ -157,6 +179,8 @@ module Rubium
     private
 
     def create_browser
+      @processed_requests_count = 0
+
       @port = options[:debugging_port] || self.class.ports_pool.acquire
       @data_dir = "/tmp/rubium_profile_#{SecureRandom.hex}"
 
@@ -205,6 +229,10 @@ module Rubium
       @client.send_cmd "Page.enable"
 
       evaluate_on_new_document(options[:extension_code]) if options[:extension_code]
+
+      set_cookies(options[:cookies]) if options[:cookies]
+
+      logger.info "Opened browser" if logger
     end
 
     def convert_proxy(proxy_string)
