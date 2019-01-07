@@ -105,7 +105,7 @@ end
 ## Installation
 Rubium tested with `2.3.0` Ruby version and up.
 
-Rubium is in the alpha stage (and therefore will have breaking updates in the future), so it's recommended to hard-code latest gem version in your Gemfile, like: `gem 'rubium', '0.1.0'`.
+Rubium is in the alpha stage (and therefore will have breaking updates in the future), so it's recommended to hard-code latest gem version in your Gemfile, like: `gem 'rubium', '0.2.0'`.
 
 ## Contribution
 Sure, feel free to fork and add new functionality.
