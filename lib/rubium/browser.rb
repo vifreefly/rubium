@@ -55,10 +55,13 @@ module Rubium
         self.class.running_pids.delete(@pid)
         self.class.ports_pool.release(@port)
 
-        FileUtils.rm_rf(@data_dir) if Dir.exist?(@data_dir)
-        @closed = true
+        # Delete temp profile directory, if there is no custom one
+        unless options[:data_dir]
+          FileUtils.rm_rf(@data_dir) if Dir.exist?(@data_dir)
+        end
 
         logger.info "Closed browser" if options[:enable_logger]
+        @closed = true
       end
     end
 
@@ -188,7 +191,8 @@ module Rubium
       @processed_requests_count = 0
 
       @port = options[:debugging_port] || self.class.ports_pool.acquire
-      @data_dir = "/tmp/rubium_profile_#{SecureRandom.hex}"
+
+      @data_dir = options[:data_dir] || "/tmp/rubium_profile_#{SecureRandom.hex}"
 
       chrome_path = Rubium.configuration.chrome_path ||
         Cliver.detect("chromium-browser") ||
