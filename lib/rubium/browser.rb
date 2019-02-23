@@ -14,7 +14,7 @@ module Rubium
   class Browser
     class ConfigurationError < StandardError; end
 
-    MAX_CONNECT_WAIT_TIME = 2
+    MAX_CONNECT_WAIT_TIME = 6
     MAX_DEFAULT_TIMEOUT = 60
 
     class << self
