@@ -5,6 +5,7 @@ require 'cliver'
 require 'timeout'
 require 'securerandom'
 require 'logger'
+require 'fileutils'
 
 at_exit do
   Rubium::Browser.running_pids.each { |pid| Process.kill("HUP", pid) }

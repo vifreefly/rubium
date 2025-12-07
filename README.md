@@ -1,12 +1,6 @@
 # Rubium
 
-## Project is archived
-
-Please consider to use [Ferrum - high-level API to control Chrome in Ruby](https://github.com/rubycdp/ferrum) instead.
-
 ## Description
-
-> **Rubium updated to 0.2.0 version!** Added new options like `set_cookies`, `restart_after`, `urls_blacklist`, `disable_images` and others. Check the readme below:
 
 Rubium is a handy wrapper around [chrome_remote](https://github.com/cavalle/chrome_remote) gem. It adds browsers instances handling, and some Capybara-like methods. It is very lightweight (250 lines of code in the main `Rubium::Browser` class for now) and doens't use Selenium or Capybara. Consider Rubium as a _very simple_ and _basic_ implementation of [Puppeteer](https://github.com/GoogleChrome/puppeteer) in Ruby language.
 
@@ -107,11 +101,17 @@ Rubium.configure do |config|
 end
 ```
 
+Common Chrome path example for MacOS:
+
+```ruby
+Rubium.configure do |config|
+  config.chrome_path = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+end
+```
+
 
 ## Installation
 Rubium tested with `2.3.0` Ruby version and up.
-
-Rubium is in the alpha stage (and therefore will have breaking updates in the future), so it's recommended to hard-code latest gem version in your Gemfile, like: `gem 'rubium', '0.2.0'`.
 
 ## Contribution
 Sure, feel free to fork and add new functionality.

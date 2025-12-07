@@ -30,6 +30,7 @@ module Rubium
     --mute-audio
     --no-sandbox
     --disable-infobars
+    --disable-blink-features=AutomationControlled
   ).freeze
 
   def self.configuration
