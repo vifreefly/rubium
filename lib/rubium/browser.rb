@@ -195,9 +195,7 @@ module Rubium
 
       @data_dir = options[:data_dir] || "/tmp/rubium_profile_#{SecureRandom.hex}"
 
-      chrome_path = Rubium.configuration.chrome_path ||
-        Cliver.detect("chromium-browser") ||
-        Cliver.detect("google-chrome")
+      chrome_path = get_chrome_path
       raise ConfigurationError, "Can't find chrome executable" unless chrome_path
 
       command = %W(
@@ -260,6 +258,14 @@ module Rubium
 
 
       logger.info "Opened browser" if options[:enable_logger]
+    end
+
+    def get_chrome_path
+      path = Rubium.configuration.chrome_path || Cliver.detect("chromium-browser") || Cliver.detect("google-chrome")
+      return path if path
+
+      macos_path = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+      macos_path if File.executable?(macos_path)
     end
 
     def convert_proxy(proxy_string)
