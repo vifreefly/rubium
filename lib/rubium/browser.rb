@@ -139,7 +139,7 @@ module Rubium
 
     def click(selector)
       @client.send_cmd "Runtime.evaluate", expression: <<~js
-        document.querySelector("#{selector}").click();
+        document.querySelector(`#{selector}`).click();
       js
     end
 
@@ -147,7 +147,7 @@ module Rubium
     # https://stackoverflow.com/a/18937620
     def send_key_on(selector, key)
       @client.send_cmd "Runtime.evaluate", expression: <<~js
-        document.querySelector("#{selector}").dispatchEvent(
+        document.querySelector(`#{selector}`).dispatchEvent(
           new KeyboardEvent("keydown", {
             bubbles: true, cancelable: true, keyCode: #{key}
           })
@@ -178,7 +178,7 @@ module Rubium
 
     def fill_in(selector, text)
       execute_script <<~js
-        document.querySelector("#{selector}").value = "#{text}"
+        document.querySelector(`#{selector}`).value = "#{text}"
       js
     end
 
