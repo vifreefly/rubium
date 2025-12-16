@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'chrome_remote'
 require 'nokogiri'
 require 'random-port'
@@ -8,7 +10,7 @@ require 'logger'
 require 'fileutils'
 
 at_exit do
-  Rubium::Browser.running_pids.each { |pid| Process.kill("HUP", pid) }
+  Rubium::Browser.running_pids.each { |pid| Process.kill('HUP', pid) }
 end
 
 module Rubium
@@ -20,7 +22,7 @@ module Rubium
 
     class << self
       def ports_pool
-        @pool ||= RandomPort::Pool.new
+        @ports_pool ||= RandomPort::Pool.new
       end
 
       def running_pids
@@ -28,13 +30,13 @@ module Rubium
       end
     end
 
-    attr_reader  :client, :devtools_url, :pid, :port, :options, :processed_requests_count, :logger
+    attr_reader :client, :devtools_url, :pid, :port, :options, :processed_requests_count, :logger
 
     def initialize(options = {})
       @options = options
 
       if @options[:enable_logger]
-        @logger = Logger.new(STDOUT)
+        @logger = Logger.new($stdout)
         @logger.progname = self.class.to_s
       end
 
@@ -42,7 +44,7 @@ module Rubium
     end
 
     def restart!
-      logger.info "Restarting..." if options[:enable_logger]
+      logger.info 'Restarting...' if options[:enable_logger]
 
       close
       create_browser
@@ -50,23 +52,21 @@ module Rubium
 
     def close
       if closed?
-        logger.info "Browser already has been closed" if options[:enable_logger]
+        logger.info 'Browser already has been closed' if options[:enable_logger]
       else
-        Process.kill("HUP", @pid)
+        Process.kill('HUP', @pid)
         self.class.running_pids.delete(@pid)
         self.class.ports_pool.release(@port)
 
         # Delete temp profile directory, if there is no custom one
-        unless options[:data_dir]
-          FileUtils.rm_rf(@data_dir) if Dir.exist?(@data_dir)
-        end
+        FileUtils.rm_rf(@data_dir) if !options[:data_dir] && Dir.exist?(@data_dir)
 
-        logger.info "Closed browser" if options[:enable_logger]
+        logger.info 'Closed browser' if options[:enable_logger]
         @closed = true
       end
     end
 
-    alias_method :destroy_driver!, :close
+    alias destroy_driver! close
 
     def closed?
       @closed
@@ -74,11 +74,9 @@ module Rubium
 
     def goto(url, wait: options[:max_timeout] || MAX_DEFAULT_TIMEOUT)
       logger.info "Started request: #{url}" if options[:enable_logger]
-      if options[:restart_after] && processed_requests_count >= options[:restart_after]
-        restart!
-      end
+      restart! if options[:restart_after] && processed_requests_count >= options[:restart_after]
 
-      response = @client.send_cmd "Page.navigate", url: url
+      response = @client.send_cmd 'Page.navigate', url: url
 
       # By default, after Page.navigate we should wait till page will load completely
       # using Page.loadEventFired. But on some websites with Ajax navigation, Page.loadEventFired
@@ -87,7 +85,7 @@ module Rubium
         # https://chromedevtools.github.io/devtools-protocol/tot/Page#event-frameStoppedLoading
         Timeout.timeout(wait) do
           @client.wait_for do |event_name, event_params|
-            event_name == "Page.frameStoppedLoading" && event_params["frameId"] == response["frameId"]
+            event_name == 'Page.frameStoppedLoading' && event_params['frameId'] == response['frameId']
           end
         end
       end
@@ -96,11 +94,11 @@ module Rubium
       logger.info "Finished request: #{url}" if options[:enable_logger]
     end
 
-    alias_method :visit, :goto
+    alias visit goto
 
     def body
-      response = @client.send_cmd "Runtime.evaluate", expression: 'document.documentElement.outerHTML'
-      response.dig("result", "value")
+      response = @client.send_cmd 'Runtime.evaluate', expression: 'document.documentElement.outerHTML'
+      response.dig('result', 'value')
     end
 
     def current_response
@@ -111,6 +109,7 @@ module Rubium
       timer = 0
       until current_response.at_xpath(path)
         return false if timer >= wait
+
         timer += 0.2 and sleep 0.2
       end
 
@@ -121,6 +120,7 @@ module Rubium
       timer = 0
       until current_response.at_css(selector)
         return false if timer >= wait
+
         timer += 0.2 and sleep 0.2
       end
 
@@ -131,6 +131,7 @@ module Rubium
       timer = 0
       until body&.include?(text)
         return false if timer >= wait
+
         timer += 0.2 and sleep 0.2
       end
 
@@ -138,52 +139,52 @@ module Rubium
     end
 
     def click(selector)
-      @client.send_cmd "Runtime.evaluate", expression: <<~js
+      @client.send_cmd 'Runtime.evaluate', expression: <<~JS
         document.querySelector(`#{selector}`).click();
-      js
+      JS
     end
 
     # https://github.com/cyrus-and/chrome-remote-interface/issues/226#issuecomment-320247756
     # https://stackoverflow.com/a/18937620
     def send_key_on(selector, key)
-      @client.send_cmd "Runtime.evaluate", expression: <<~js
+      @client.send_cmd 'Runtime.evaluate', expression: <<~JS
         document.querySelector(`#{selector}`).dispatchEvent(
           new KeyboardEvent("keydown", {
             bubbles: true, cancelable: true, keyCode: #{key}
           })
         );
-      js
+      JS
     end
 
     # https://github.com/GoogleChrome/puppeteer/blob/master/lib/Page.js#L784
     # https://stackoverflow.com/questions/46113267/how-to-use-evaluateonnewdocument-and-exposefunction
     # https://chromedevtools.github.io/devtools-protocol/tot/Page/#method-addScriptToEvaluateOnNewDocument
     def evaluate_on_new_document(script)
-      @client.send_cmd "Page.addScriptToEvaluateOnNewDocument", source: script
+      @client.send_cmd 'Page.addScriptToEvaluateOnNewDocument', source: script
     end
 
     ###
 
     def cookies
-      response = @client.send_cmd "Network.getCookies"
-      response["cookies"]
+      response = @client.send_cmd 'Network.getCookies'
+      response['cookies']
     end
 
     # https://chromedevtools.github.io/devtools-protocol/tot/Network#method-setCookies
     def set_cookies(cookies)
-      @client.send_cmd "Network.setCookies", cookies: cookies
+      @client.send_cmd 'Network.setCookies', cookies: cookies
     end
 
     ###
 
     def fill_in(selector, text)
-      execute_script <<~js
+      execute_script <<~JS
         document.querySelector(`#{selector}`).value = "#{text}"
-      js
+      JS
     end
 
     def execute_script(script)
-      @client.send_cmd "Runtime.evaluate", expression: script
+      @client.send_cmd 'Runtime.evaluate', expression: script
     end
 
     private
@@ -198,13 +199,13 @@ module Rubium
       chrome_path = get_chrome_path
       raise ConfigurationError, "Can't find chrome executable" unless chrome_path
 
-      command = %W(
+      command = %W[
         #{chrome_path} about:blank
         --remote-debugging-port=#{@port}
         --user-data-dir=#{@data_dir}
-      ) + DEFAULT_PUPPETEER_ARGS
+      ] + DEFAULT_PUPPETEER_ARGS
 
-      command << "--headless" if ENV["HEADLESS"] != "false" && options[:headless] != false
+      command << '--headless' if ENV['HEADLESS'] != 'false' && options[:headless] != false
       command << "--window-size=#{options[:window_size].join(',')}" if options[:window_size]
 
       if options[:user_agent]
@@ -214,11 +215,11 @@ module Rubium
 
       if options[:proxy_server]
         proxy_server = options[:proxy_server].respond_to?(:call) ? options[:proxy_server].call : options[:proxy_server]
-        proxy_server = convert_proxy(proxy_server) unless proxy_server.include?("://")
+        proxy_server = convert_proxy(proxy_server) unless proxy_server.include?('://')
         command << "--proxy-server=#{proxy_server}"
       end
 
-      @pid = spawn(*command, [:out, :err] => "/dev/null")
+      @pid = spawn(*command, %i[out err] => '/dev/null')
       self.class.running_pids << @pid
       @closed = false
 
@@ -233,9 +234,9 @@ module Rubium
       @devtools_url = "http://localhost:#{@port}/"
 
       # https://github.com/GoogleChrome/puppeteer/blob/master/lib/Page.js
-      @client.send_cmd "Target.setAutoAttach", autoAttach: true, waitForDebuggerOnStart: false
-      @client.send_cmd "Network.enable"
-      @client.send_cmd "Page.enable"
+      @client.send_cmd 'Target.setAutoAttach', autoAttach: true, waitForDebuggerOnStart: false
+      @client.send_cmd 'Network.enable'
+      @client.send_cmd 'Page.enable'
 
       evaluate_on_new_document(options[:extension_code]) if options[:extension_code]
 
@@ -244,32 +245,29 @@ module Rubium
       if options[:urls_blacklist] || options[:disable_images]
         urls = []
 
-        if options[:urls_blacklist]
-          urls += options[:urls_blacklist]
-        end
+        urls += options[:urls_blacklist] if options[:urls_blacklist]
 
         if options[:disable_images]
-          urls += %w(jpg jpeg png gif swf svg tif).map { |ext| ["*.#{ext}", "*.#{ext}?*"] }.flatten
-          urls << "data:image*"
+          urls += %w[jpg jpeg png gif swf svg tif].map { |ext| ["*.#{ext}", "*.#{ext}?*"] }.flatten
+          urls << 'data:image*'
         end
 
-        @client.send_cmd "Network.setBlockedURLs", urls: urls
+        @client.send_cmd 'Network.setBlockedURLs', urls: urls
       end
 
-
-      logger.info "Opened browser" if options[:enable_logger]
+      logger.info 'Opened browser' if options[:enable_logger]
     end
 
     def get_chrome_path
-      path = Rubium.configuration.chrome_path || Cliver.detect("chromium-browser") || Cliver.detect("google-chrome")
+      path = Rubium.configuration.chrome_path || Cliver.detect('chromium-browser') || Cliver.detect('google-chrome')
       return path if path
 
-      macos_path = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+      macos_path = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
       macos_path if File.executable?(macos_path)
     end
 
     def convert_proxy(proxy_string)
-      ip, port, type, user, password = proxy_string.split(":")
+      ip, port, type, = proxy_string.split(':')
       "#{type}://#{ip}:#{port}"
     end
   end

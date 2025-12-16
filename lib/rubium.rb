@@ -1,9 +1,11 @@
+# frozen_string_literal: true
+
 require 'ostruct'
 require 'rubium/version'
 require 'rubium/browser'
 
 module Rubium
-  DEFAULT_PUPPETEER_ARGS = %w(
+  DEFAULT_PUPPETEER_ARGS = %w[
     --disable-field-trial-config
     --disable-background-networking
     --disable-background-timer-throttling
@@ -32,7 +34,7 @@ module Rubium
     --no-sandbox
     --force-webrtc-ip-handling-policy=disable_non_proxied_udp
     --webrtc-ip-handling-policy=disable_non_proxied_udp
-  ).freeze
+  ].freeze
 
   def self.configuration
     @configuration ||= OpenStruct.new
