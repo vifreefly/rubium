@@ -4,33 +4,34 @@ require 'rubium/browser'
 
 module Rubium
   DEFAULT_PUPPETEER_ARGS = %w(
+    --disable-field-trial-config
     --disable-background-networking
     --disable-background-timer-throttling
     --disable-backgrounding-occluded-windows
     --disable-breakpad
-    --disable-client-side-phishing-detection
-    --disable-default-apps
+    --no-default-browser-check
     --disable-dev-shm-usage
-    --disable-extensions
-    --disable-features=site-per-process
+    --disable-features=AcceptCHFrame,AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate,AutoDeElevate,RenderDocument,OptimizationHints
+    --enable-features=CDPScreenshotNewSurface
     --disable-hang-monitor
-    --disable-ipc-flooding-protection
-    --disable-popup-blocking
     --disable-prompt-on-repost
     --disable-renderer-backgrounding
-    --disable-sync
-    --disable-translate
-    --metrics-recording-only
+    --force-color-profile=srgb
     --no-first-run
-    --safebrowsing-disable-auto-update
-    --enable-automation
     --password-store=basic
     --use-mock-keychain
-    --hide-scrollbars
-    --mute-audio
-    --no-sandbox
+    --no-service-autorun
+    --export-tagged-pdf
+    --disable-search-engine-choice-screen
+    --edge-skip-compat-layer-relaunch
     --disable-infobars
+    --disable-search-engine-choice-screen
+    --disable-sync
     --disable-blink-features=AutomationControlled
+    --enable-unsafe-swiftshader
+    --no-sandbox
+    --remote-debugging-pipe
+    --no-startup-window
   ).freeze
 
   def self.configuration
