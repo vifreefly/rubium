@@ -30,8 +30,8 @@ module Rubium
     --disable-blink-features=AutomationControlled
     --enable-unsafe-swiftshader
     --no-sandbox
-    --remote-debugging-pipe
-    --no-startup-window
+    --force-webrtc-ip-handling-policy=disable_non_proxied_udp
+    --webrtc-ip-handling-policy=disable_non_proxied_udp
   ).freeze
 
   def self.configuration
