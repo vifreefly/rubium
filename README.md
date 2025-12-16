@@ -111,7 +111,7 @@ end
 
 
 ## Installation
-Rubium tested with `2.3.0` Ruby version and up.
+Rubium tested with `3.1.0` Ruby version and up.
 
 ## Contribution
 Sure, feel free to fork and add new functionality.
