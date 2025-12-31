@@ -5,7 +5,7 @@ require 'rubium/version'
 require 'rubium/browser'
 
 module Rubium
-  DEFAULT_PUPPETEER_ARGS = %w[
+  DEFAULT_ARGS = %w[
     --disable-field-trial-config
     --disable-background-networking
     --disable-background-timer-throttling

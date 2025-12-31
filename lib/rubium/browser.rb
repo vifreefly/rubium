@@ -203,7 +203,7 @@ module Rubium
         #{chrome_path} about:blank
         --remote-debugging-port=#{@port}
         --user-data-dir=#{@data_dir}
-      ] + DEFAULT_PUPPETEER_ARGS
+      ] + DEFAULT_ARGS
 
       command << '--headless' if ENV['HEADLESS'] != 'false' && options[:headless] != false
       command << "--window-size=#{options[:window_size].join(',')}" if options[:window_size]
