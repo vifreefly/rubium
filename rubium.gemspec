@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.authors       = ['Victor Afanasev']
   spec.email         = ['vicfreefly@gmail.com']
 
-  spec.summary       = 'Headless Chromium Ruby API based on ChromeRemote gem'
+  spec.summary       = 'Antidetect Headless Chromium Ruby API based on ChromeRemote gem'
   spec.description   = spec.summary
   spec.homepage      = 'https://github.com/vifreefly/rubium'
   spec.license       = 'MIT'
@@ -27,4 +27,5 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'cliver', '~> 0.3'
   spec.add_dependency 'nokogiri'
   spec.add_dependency 'random-port'
+  spec.add_dependency 'ostruct'
 end
