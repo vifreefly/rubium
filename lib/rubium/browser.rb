@@ -72,7 +72,7 @@ module Rubium
       @closed
     end
 
-    def goto(url, wait: options[:max_timeout] || MAX_DEFAULT_TIMEOUT)
+    def goto(url, max_timeout: options[:max_timeout] || MAX_DEFAULT_TIMEOUT)
       logger.info "Started request: #{url}" if options[:enable_logger]
       restart! if options[:restart_after] && processed_requests_count >= options[:restart_after]
 
@@ -80,10 +80,10 @@ module Rubium
 
       # By default, after Page.navigate we should wait till page will load completely
       # using Page.loadEventFired. But on some websites with Ajax navigation, Page.loadEventFired
-      # will stuck forever. In this case you can provide `wait: false` option to skip waiting.
-      if wait != false
+      # will stuck forever. In this case you can provide `max_timeout: false` option to skip waiting.
+      if max_timeout != false
         # https://chromedevtools.github.io/devtools-protocol/tot/Page#event-frameStoppedLoading
-        Timeout.timeout(wait) do
+        Timeout.timeout(max_timeout) do
           @client.wait_for do |event_name, event_params|
             event_name == 'Page.frameStoppedLoading' && event_params['frameId'] == response['frameId']
           end
