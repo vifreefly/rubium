@@ -2,48 +2,47 @@
 
 ## Description
 
-Rubium is a lightweight Ruby API for headless antidetect Chrome browser automation. It provides essential Capybara-like methods in just 300 lines of code — no Selenium or heavy dependencies required. Use it as a simple alternative to Puppeteer/Playwright for web scraping and basic browser automation tasks:
+Rubium is a lightweight Ruby API for headless antidetect Chrome browser automation. It provides essential web navigation methods in just 300 lines of code — no Selenium or heavy dependencies required. Use it as a simple alternative to Capybara/Puppeteer/Playwright for web scraping and browser automation tasks:
 
 ```ruby
 require 'rubium'
 
 browser = Rubium::Browser.new
-browser.visit("https://github.com/vifreefly/rubium")
+browser.goto('https://github.com/vifreefly/rubium')
 
 # Get current page response as string:
 browser.body
-
 # Get current page response as Nokogiri object:
 browser.current_response
 
 # Click to the some element (css selector):
-browser.click("some selector")
+browser.click('some selector')
 
 # Get current cookies:
 browser.cookies
 
 # Set cookies (Array of hashes):
 browser.set_cookies([
-  { name: "some_cookie_name", value: "some_cookie_value", domain: ".some-cookie-domain.com" },
-  { name: "another_cookie_name", value: "another_cookie_value", domain: ".another-cookie-domain.com" }
+  { name: 'some_cookie_name', value: 'some_cookie_value', domain: '.some-cookie-domain.com' },
+  { name: 'another_cookie_name', value: 'another_cookie_value', domain: '.another-cookie-domain.com' }
 ])
 
 # Fill in some field:
-browser.fill_in("some field selector", "Some text")
+browser.fill_in('some field selector', 'Some text')
 
 # Tells if current response has provided css selector or not. You can
 # provide optional `wait:` argument (in seconds) to set the max wait time for the selector:
-browser.has_css?("some selector", wait: 1)
+browser.has_css?('some selector', wait: 1)
 
 # Tells if current response has provided text or not. You can
 # provide optional `wait:` argument (in seconds) to set the max wait time for the text:
-browser.has_text?("some text")
+browser.has_text?('some text')
 
 # Evaluate some JS code on a new tab:
-browser.evaluate_on_new_document(File.read "browser_inject.js")
+browser.evaluate_on_new_document(File.read 'browser_inject.js')
 
 # Evaluate JS code expression:
-browser.execute_script("JS code string")
+browser.execute_script('JS code string')
 
 # Access chrome_remote client (instance of ChromeRemote class) directly:
 # See more here: https://github.com/cavalle/chrome_remote#using-the-chromeremote-api
@@ -63,14 +62,14 @@ browser = Rubium::Browser.new(
   debugging_port: 9222,                  # custom debugging port. Default is any available port.
   headless: false,                       # Run browser in normal (not headless) mode. Default is headless.
   window_size: [1600, 900],              # Custom window size. Default is unset.
-  user_agent: "Some user agent",         # Custom user-agent.
-  proxy_server: "http://1.1.1.1:8080",   # Set proxy.
-  extension_code: "Some JS code string", # Inject custom JS code on each page. See above `evaluate_on_new_document`
+  user_agent: 'Some user agent',         # Custom user-agent.
+  proxy_server: 'http://1.1.1.1:8080',   # Set proxy.
+  extension_code: 'Some JS code string', # Inject custom JS code on each page. See above `evaluate_on_new_document`
   cookies: [],                           # Set custom cookies, see above `set_cookies`
   restart_after: 25,                     # Automatically restart browser after N processed requests
   enable_logger: true,                   # Enable logger to log info about processing requests
   max_timeout: 30,                       # How long to wait (in seconds) until page will be fully loaded. Default 60 sec.
-  urls_blacklist: ["*some-domain.com*"], # Skip all requests which match provided patterns (wildcard allowed).
+  urls_blacklist: ['*some-domain.com*'], # Skip all requests which match provided patterns (wildcard allowed).
   disable_images: true                   # Do not download images.
 )
 ```
@@ -78,8 +77,8 @@ browser = Rubium::Browser.new(
 Note that for options `user_agent` and `proxy_server` you can provide `lambda` object instead of string:
 
 ```ruby
-USER_AGENTS = ["Safari", "Mozilla", "IE", "Chrome"]
-PROXIES = ["http://1.1.1.1:8080", "http://2.2.2.2:8080", "http://3.3.3.3:8080"]
+USER_AGENTS = ['Safari', 'Mozilla', 'IE', 'Chrome']
+PROXIES = ['http://1.1.1.1:8080', 'http://2.2.2.2:8080', 'http://3.3.3.3:8080']
 
 browser = Rubium::Browser.new(
   user_agent:   -> { USER_AGENTS.sample },
@@ -95,7 +94,7 @@ browser = Rubium::Browser.new(
 
 ```ruby
 Rubium.configure do |config|
-  config.chrome_path = "/path/to/chrome/binary"
+  config.chrome_path = '/path/to/chrome/binary'
 end
 ```
 
@@ -103,7 +102,7 @@ Common Chrome path example for MacOS:
 
 ```ruby
 Rubium.configure do |config|
-  config.chrome_path = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+  config.chrome_path = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 end
 ```
 
